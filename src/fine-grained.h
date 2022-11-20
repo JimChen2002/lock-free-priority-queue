@@ -10,7 +10,7 @@
 #define RCHILD(i) (2*i + 1)
 #define ROOT 1
 
-#define MAXN (1<<20)
+#define MAXN (1<<16)
 
 using namespace std;
 
@@ -50,6 +50,7 @@ class BitReversedCounter
             return reversed;
         }
         int decrement() {
+            int ret = reversed;
             counter--;
             int bit = high_bit - 1;
             for (; bit >= 0; bit--) {
@@ -61,7 +62,7 @@ class BitReversedCounter
                 reversed = counter;
                 high_bit--;
             }
-            return reversed;
+            return ret;
         }
 };
 
@@ -77,6 +78,7 @@ class HeapPriorityQueue
         int tag(int i) { return items[i].tag; }
         int priority(int i) { return items[i].priority; } 
         void swap_items(int i,int j) { items[i].exchange(items[j]); }
+        void print_heap() {for (int i = 1; i <= max_size; i++) {printf("{k: %d, v: %d} ", items[i].priority, items[i].value);} printf("\n");}
     public:
         HeapPriorityQueue(int n){
             max_size = 1;
@@ -95,30 +97,33 @@ class HeapPriorityQueue
             unlock(cur);
 
             while(cur > ROOT){
-                int parent = cur/2;
+                int parent = cur/2, nxt = cur;
                 lock(parent);lock(cur);
                 if(tag(parent) == AVAILABLE && tag(cur) == thread_id){
                     if(priority(cur) > priority(parent)){
                         swap_items(cur, parent);
-                        cur = parent;
+                        nxt = parent;
                     }
                     else{
                         items[cur].tag = AVAILABLE;
-                        cur = 0;
+                        nxt = 0;
                     }
                 }
                 else if(tag(parent) == EMPTY)
-                    cur = 0;
+                    nxt = 0;
                 else if(tag(cur) != thread_id)
-                    cur = parent;
+                    nxt = parent;
                 unlock(cur);unlock(parent);
+                cur = nxt;
             }
+            
             if(cur == 1){
                 lock(cur);
                 if(tag(cur) == thread_id)
                     items[cur].tag = AVAILABLE;
                 unlock(cur);
             }
+            // print_heap();
         }
         int deleteMin()
         {
@@ -126,7 +131,7 @@ class HeapPriorityQueue
             int bottom = sz.decrement();
             lock(bottom);
             sz_lock.unlock();
-            int p = priority(bottom);
+            int p = priority(bottom), value = items[bottom].value;
             items[bottom].tag = EMPTY;
             unlock(bottom);
             
@@ -138,7 +143,8 @@ class HeapPriorityQueue
             }
 
             // replace the top item with the item stored from the bottom
-            swap_items(p, priority(ROOT));
+            swap(p, items[ROOT].priority);
+            items[ROOT].value = value;
             items[ROOT].tag = AVAILABLE;
             
             // adjust heap starting at top.
@@ -168,7 +174,7 @@ class HeapPriorityQueue
                 }
             }
             unlock(i);
-
+            // print_heap();
             return p;
         }
 };

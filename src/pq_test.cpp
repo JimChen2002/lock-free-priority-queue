@@ -4,18 +4,25 @@
 
 void testBasicFunctionality() {
     printf(" ======== testBasicFunctionality =========\n");
-    HeapPriorityQueue pq(10);
-    for (int i = 0; i < 10; i++) {
+    const int n = 500;
+    HeapPriorityQueue pq(n);
+    for (int i = 1; i <= n; i++) {
+        printf("Inserting %d-th item\n",i);
         pq.insert(i, i, 0);
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 1; i <= n; i++) {
         int x = pq.deleteMin();
-        if(x!=10-i){
-            printf("Expecting value %d, got %d\n", 10-i, x);
+        if(x!=n-i+1){
+            printf("Expecting priority %d, got %d\n", n-i+1, x);
         }
     }
     printf(" ======== End =========\n");
 }
+
+// void testInterLeavedPriority() {
+//     const int n = 500;
+
+// }
 
 
 int main() {
