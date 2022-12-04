@@ -10,7 +10,7 @@
 #define RCHILD(i) (2*i + 1)
 #define ROOT 1
 
-#define MAXN (1<<16)
+#define MAXN (1<<20)
 
 using namespace std;
 

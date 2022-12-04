@@ -11,6 +11,7 @@ geometric_distribution<int> distribution(0.5);
 struct Node{
     int key;
     int value;
+    int timestamp;
     // use atomic, or else we need MFENCE
     atomic<bool> inserting; 
     vector<atomic<Node*> > next;
@@ -20,15 +21,18 @@ struct Node{
         value = _value;
         inserting = false;
         next = vector<atomic<Node*> >((size_t)nlevels+1);
+        timestamp = 0;
         for(auto &x:next) x=nullptr;
     }
 };
 
 class LockFreePriorityQueue {
     private:
-        const static int BOUNDOFFSET = 50;
+        const static int BOUNDOFFSET = 5000;
         int nlevels;
         Node *head, *tail;
+        int reclaim_timestamp, current_timestamp;
+        Node *reclaim;
         // return Node* and bool &d
         Node* parse_reference(atomic<Node*> &x, bool &d){
             uintptr_t cur = reinterpret_cast<uintptr_t>(x.load());
@@ -88,6 +92,7 @@ class LockFreePriorityQueue {
                     if(predd && i==0) del=cur;
                     pred=cur;
                     cur = parse_reference(pred->next[i],predd);
+                    if(cur==tail) break;
                 }
                 preds[i]=pred;
                 succs[i]=cur;
@@ -102,12 +107,14 @@ class LockFreePriorityQueue {
             tail = new Node(0,0,nlevels);
             for(size_t i=0;i<(size_t)nlevels;i++)
                 head->next[i] = tail;
+            reclaim_timestamp = current_timestamp = 0;
+            reclaim = nullptr;
         }
         void insert(int key, int value){
             int height = min(nlevels,distribution(generator)+1);
             Node *cur = new Node(key, value, height);
             cur->inserting = true;
-            vector<Node*> preds((size_t)nlevels),succs((size_t)nlevels);
+            vector<Node*> preds((size_t)nlevels+1),succs((size_t)nlevels+1);
             Node* del;
             do{
                 del = LocatePreds(key,preds,succs);
@@ -131,7 +138,8 @@ class LockFreePriorityQueue {
             cur->inserting = false;
         }
         int deleteMin(){
-            Node *x=head,*newhead=nullptr,*obshead=x->next[0].load();
+            bool ttt;
+            Node *x=head,*newhead=nullptr,*obshead=parse_reference(x->next[0],ttt);
             int offset=0;
             bool d=true;
             while(d){
@@ -151,10 +159,32 @@ class LockFreePriorityQueue {
             Node* obs_combined = combine_reference(obshead,1);
             if(head->next[0].compare_exchange_strong(obs_combined,combine_reference(newhead,1))){
                 restructure();
-                // Node *cur = obshead;
-                // while(cur!=newhead){
-                //     Mark recycle and go to next
-                // }
+                Node *cur = obshead, *nxt;
+                int current_timestamp = obshead->timestamp;
+                bool tmp;
+                while(cur!=newhead){
+                    cur->timestamp = current_timestamp++;
+                    nxt = parse_reference(cur->next[0],tmp);
+                    cur = nxt;
+                }
+                newhead->timestamp = current_timestamp++;
+
+                int earliest_timestamp = current_timestamp;
+                for(size_t i=0;i<(size_t)nlevels;i++){
+                    cur = parse_reference(head->next[i],tmp);
+                    if(cur != tail)
+                        earliest_timestamp = min(earliest_timestamp, cur->timestamp);
+                }
+
+                if(reclaim == nullptr) reclaim = obshead;
+                int cnt = 0;
+                while(reclaim->timestamp + 5000 < current_timestamp && reclaim->timestamp < earliest_timestamp){
+                    nxt = parse_reference(reclaim->next[0],tmp);
+                    free(reclaim);
+                    reclaim = nxt;
+                    cnt++;
+                }
+                if (cnt > 0) printf("%d nodes claimed\n", cnt);
             }
             return value;
         }

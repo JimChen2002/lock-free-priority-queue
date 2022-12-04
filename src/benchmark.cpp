@@ -33,17 +33,19 @@
 
 #include <limits.h>
 
-#include "lock-free.h"
+// #include "lock-free.h"
+#include "fine-grained.h"
 
 
 /* check your cpu core numbering before pinning */
-// #define PIN
+#define PIN
 
-#define DEFAULT_SECS 1
-#define DEFAULT_NTHREADS 1
+#define DEFAULT_SECS 2
+#define DEFAULT_NTHREADS 2
 #define DEFAULT_OFFSET 32
 #define DEFAULT_SIZE 1 << 15
 #define EXPS 100000000
+#define NLEVEL 32
 
 #define THREAD_ARGS_FOREACH(_iter) \
     for (int i = 0; i < nthreads && (_iter = &ts[i]); i++)
@@ -79,8 +81,6 @@
     } while (0)
 
 
-#define NLEVEL 10
-
 void rng_init(unsigned short rng[3]);
 
 typedef struct thread_args_s
@@ -107,7 +107,6 @@ void *run(void *_args);
 
 void (*work)();
 thread_args_t *ts;
-LockFreePriorityQueue *pq;
 
 volatile int wait_barrier = 0;
 volatile int loop = 0;
@@ -181,8 +180,15 @@ rng_init (unsigned short rng[3])
 
 }
 
+// LockFreePriorityQueue *pq;
+HeapPriorityQueue *pq;
+// LockFreePriorityQueue *pq;
+
 int main(int argc, char **argv)
 {
+    // pq = new LockFreePriorityQueue(NLEVEL);
+    pq = new HeapPriorityQueue((int)(1e8));
+
     int opt;
     unsigned short rng[3];
     struct timespec time;
@@ -248,7 +254,6 @@ int main(int argc, char **argv)
     rng[2] = time.tv_nsec >> 32;
 
     /* initialize garbage collection */
-    pq = new LockFreePriorityQueue(NLEVEL);
     
         // if DES workload, pre-sample values/event times
         if (exp)
@@ -263,12 +268,14 @@ int main(int argc, char **argv)
         if (exp)
         {
             elem = exps[exps_pos++];
-            pq->insert((int)elem, (int)elem);
+            pq->insert((int)elem, (int)elem, (int)getpid());
+            // pq->insert((int)elem, (int)elem);
         }
         else
         {
             elem = nrand48(rng);
-            pq->insert((int)elem, (int)elem);
+            pq->insert((int)elem, (int)elem, (int)getpid());
+            // pq->insert((int)elem, (int)elem);
         }
     }
 
@@ -339,14 +346,15 @@ __thread thread_args_t *args;
 /* uniform workload */
 void work_uni()
 {
-    static unsigned long elem = 0;
-    elem++;
-    if (elem&1) // erand48(args->rng) < 0.5
+    unsigned long elem = 0;
+    // elem++;
+    if (erand48(args->rng) < 0.5)
     { 
-        // elem = (unsigned long)1 + nrand48(args->rng);
+        elem = (unsigned long)1 + nrand48(args->rng);
         // printf("about to insert %d\n", (int)elem);
-        pq->insert((int)elem, (int)elem);
-        if(elem%10==1) printf("inserted %d\n", (int) elem);
+        pq->insert((int)elem, (int)elem, (int)getpid());
+        // pq->insert((int)elem, (int)elem);
+        // if(elem%10==1) printf("inserted %d\n", (int) elem);
     }
     else
         pq->deleteMin();
@@ -360,7 +368,8 @@ void work_exp()
     pq->deleteMin();
     pos = __sync_fetch_and_add(&exps_pos, 1);
     elem = exps[pos];
-    pq->insert((int)elem, (int)elem);
+    pq->insert((int)elem, (int)elem, (int)getpid());
+    // pq->insert((int)elem, (int)elem);
 }
 
 void *
