@@ -13,13 +13,13 @@ struct Node{
     int value;
     // use atomic, or else we need MFENCE
     atomic<bool> inserting; 
-    vector<atomic<Node*>> next;
+    vector<atomic<Node*> > next;
     Node(){}
     Node(int _key, int _value, int nlevels){
         key = _key;
         value = _value;
         inserting = false;
-        next = vector<atomic<Node*>>((size_t)nlevels);
+        next = vector<atomic<Node*> >((size_t)nlevels+1);
         for(auto &x:next) x=nullptr;
     }
 };

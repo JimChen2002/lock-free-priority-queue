@@ -24,15 +24,28 @@ void testBasicFunctionality() {
     printf(" ======== End =========\n");
 }
 
-// void testInterLeavedPriority() {
-//     const int n = 500;
-
-// }
+void testInterLeavedPriority() {
+    const int n = 500;
+    LockFreePriorityQueue pq(10);
+    for (int elem = 1; elem < 100000; elem++) {
+        if (elem & 1) // erand48(args->rng) < 0.5
+        {
+            // elem = (unsigned long)1 + nrand48(args->rng);
+            // printf("about to insert %d\n", (int)elem);
+            pq.insert((int)elem, (int)elem);
+            printf("inserted %d\n", (int)elem);
+        }
+        else
+            pq.deleteMin();
+    }
+       
+}
 
 
 int main() {
-    testBasicFunctionality();
-    // printf("All test passed!\n");
+    // testBasicFunctionality();
+    testInterLeavedPriority();
+    printf("All test passed!\n");
     return 0;
 }
 
