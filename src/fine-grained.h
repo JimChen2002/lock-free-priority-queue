@@ -18,8 +18,10 @@ struct Node
 {
     int priority, value, tag;
     mutex L;
-    // char padding[48];
-    void exchange(Node &other)
+    pthread_mutex_t mux;
+        // char padding[48];
+        void
+        exchange(Node &other)
     {
         swap(priority, other.priority);
         swap(value, other.value);
@@ -73,8 +75,14 @@ class HeapPriorityQueue
         BitReversedCounter sz;
         Node items[MAXN];
         int max_size;
-        void lock(int i) { items[i].L.lock(); }
-        void unlock(int i) { items[i].L.unlock(); }
+        void lock(int i) { 
+            // items[i].L.lock();
+            pthread_mutex_lock(&items[i].mux);
+        }
+        void unlock(int i) {
+            pthread_mutex_unlock(&items[i].mux);
+            // items[i].L.unlock(); 
+        }
         int tag(int i) { return items[i].tag; }
         int priority(int i) { return items[i].priority; } 
         void swap_items(int i,int j) { items[i].exchange(items[j]); }
@@ -84,9 +92,18 @@ class HeapPriorityQueue
             max_size = 1;
             while(max_size < n)
                 max_size <<= 1;
+            
+            for (int i = 0; i < MAXN; i++) {
+                int rc = pthread_mutex_init(&items[i].mux, NULL);
+                if (rc < 0) {
+                    perror("error!");
+                }
+                items[i].tag = EMPTY;
+            }
         }
         void insert(int key, int value, int thread_id)
-        {
+        {   
+            // printf("inserted element key %d and value %d\n", key, value);
             sz_lock.lock();
             int cur = sz.increment();
             lock(cur);
@@ -98,7 +115,8 @@ class HeapPriorityQueue
 
             while(cur > ROOT){
                 int parent = cur/2, nxt = cur;
-                lock(parent);lock(cur);
+                lock(parent);
+                lock(cur);
                 if(tag(parent) == AVAILABLE && tag(cur) == thread_id){
                     if(priority(cur) > priority(parent)){
                         swap_items(cur, parent);
@@ -113,7 +131,8 @@ class HeapPriorityQueue
                     nxt = 0;
                 else if(tag(cur) != thread_id)
                     nxt = parent;
-                unlock(cur);unlock(parent);
+                unlock(cur);
+                unlock(parent);
                 cur = nxt;
             }
             
@@ -129,6 +148,14 @@ class HeapPriorityQueue
         {
             sz_lock.lock();
             int bottom = sz.decrement();
+
+            // if nothing is in the pq
+            if (bottom == 0) {
+                sz.increment();
+                sz_lock.unlock();
+                return -1;
+            }
+            
             lock(bottom);
             sz_lock.unlock();
             int p = priority(bottom), value = items[bottom].value;
@@ -152,6 +179,8 @@ class HeapPriorityQueue
             while (i < max_size / 2) {
                 int child;
                 int left = LCHILD(i), right = RCHILD(i);
+                lock(left);
+                lock(right);
                 if (tag(left) == EMPTY) {
                     unlock(right);
                     unlock(left);

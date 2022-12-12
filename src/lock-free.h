@@ -64,7 +64,7 @@ class LockFreePriorityQueue {
             Node *pred = head;
             while(i>0){
                 bool hd,curd;
-                Node *h = parse_reference(head->next[i],hd);
+                Node *h = parse_reference(head->next[i],hd), *h_old = head->next[i].load();
                 Node *cur = parse_reference(pred->next[i],curd);
                 if(!hd){
                     i--;
@@ -74,7 +74,7 @@ class LockFreePriorityQueue {
                     pred = cur;
                     cur = parse_reference(pred->next[i],curd);
                 }
-                if(head->next[i].compare_exchange_strong(h,pred->next[i].load()))
+                if(head->next[i].compare_exchange_strong(h_old,pred->next[i].load()))
                     i--;
             }
         }
