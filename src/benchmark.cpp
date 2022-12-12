@@ -5,11 +5,11 @@
  *
  * program usage:
  * ./benchmark -n <NUM_THREADS> -i <TEST DURATION (in seconds)> -w <WORKLOAD TYPE>
- * 
+ *
  * 2 kinds of workloads: Uniform and DES (discrete event simulation)
  * https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
- * 
- * Step 1: run experiment, measure # of ops / sec 
+ *
+ * Step 1: run experiment, measure # of ops / sec
  * Step 2: save results to csv
  *
  */
@@ -30,7 +30,7 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
-
+#include <cstring>
 #include <limits.h>
 
 // #include "lock-free.h"
@@ -38,7 +38,7 @@
 
 
 /* check your cpu core numbering before pinning */
-#define PIN
+// #define PIN
 
 #define DEFAULT_SECS 2
 #define DEFAULT_NTHREADS 2
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 
     E_NULL(ts = (thread_args_t *) malloc(nthreads * sizeof(thread_args_t)));
     memset(ts, 0, nthreads * sizeof(thread_args_t));
-    
+
     // finally available in macos 10.12 as well!
     clock_gettime(CLOCK_REALTIME, &time);
 
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
     rng[2] = time.tv_nsec >> 32;
 
     /* initialize garbage collection */
-    
+
         // if DES workload, pre-sample values/event times
         if (exp)
     {
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
     }
     struct timespec elapsed = timediff(start, end);
     double dt = elapsed.tv_sec + (double)elapsed.tv_nsec / 1000000000.0;
-    
+
     if (!concise)
     {
         printf("Total time:\t%1.8f s\n", dt);
@@ -349,7 +349,7 @@ void work_uni()
     unsigned long elem = 0;
     // elem++;
     if (erand48(args->rng) < 0.5)
-    { 
+    {
         elem = (unsigned long)1 + nrand48(args->rng);
         // printf("about to insert %d\n", (int)elem);
         pq->insert((int)elem, (int)elem, (int)getpid());

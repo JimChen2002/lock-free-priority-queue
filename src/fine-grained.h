@@ -10,7 +10,7 @@
 #define RCHILD(i) (2*i + 1)
 #define ROOT 1
 
-#define MAXN (1<<20)
+#define MAXN (1<<18)
 
 using namespace std;
 
@@ -18,8 +18,10 @@ struct Node
 {
     int priority, value, tag;
     mutex L;
-    // char padding[48];
-    void exchange(Node &other)
+    pthread_mutex_t mux;
+        // char padding[48];
+        void
+        exchange(Node &other)
     {
         swap(priority, other.priority);
         swap(value, other.value);
@@ -27,11 +29,11 @@ struct Node
     }
 };
 
-class BitReversedCounter 
+class BitReversedCounter
 {
     private:
         int counter, reversed, high_bit;
-    public: 
+    public:
         BitReversedCounter(){
             counter = 0, reversed = 0, high_bit = -1;
         }
@@ -73,10 +75,16 @@ class HeapPriorityQueue
         BitReversedCounter sz;
         Node items[MAXN];
         int max_size;
-        void lock(int i) { items[i].L.lock(); }
-        void unlock(int i) { items[i].L.unlock(); }
+        void lock(int i) {
+            // items[i].L.lock();
+            pthread_mutex_lock(&items[i].mux);
+        }
+        void unlock(int i) {
+            pthread_mutex_unlock(&items[i].mux);
+            // items[i].L.unlock();
+        }
         int tag(int i) { return items[i].tag; }
-        int priority(int i) { return items[i].priority; } 
+        int priority(int i) { return items[i].priority; }
         void swap_items(int i,int j) { items[i].exchange(items[j]); }
         void print_heap() {for (int i = 1; i <= max_size; i++) {printf("{k: %d, v: %d} ", items[i].priority, items[i].value);} printf("\n");}
     public:
@@ -84,9 +92,18 @@ class HeapPriorityQueue
             max_size = 1;
             while(max_size < n)
                 max_size <<= 1;
+
+            for (int i = 0; i < MAXN; i++) {
+                int rc = pthread_mutex_init(&items[i].mux, NULL);
+                if (rc < 0) {
+                    perror("error!");
+                }
+                items[i].tag = EMPTY;
+            }
         }
         void insert(int key, int value, int thread_id)
         {
+            // printf("inserted element key %d and value %d\n", key, value);
             sz_lock.lock();
             int cur = sz.increment();
             lock(cur);
@@ -98,7 +115,10 @@ class HeapPriorityQueue
 
             while(cur > ROOT){
                 int parent = cur/2, nxt = cur;
-                lock(parent);lock(cur);
+                lock(parent);
+                __asm__ __volatile__("mfence" ::
+                                         : "memory");
+                lock(cur);
                 if(tag(parent) == AVAILABLE && tag(cur) == thread_id){
                     if(priority(cur) > priority(parent)){
                         swap_items(cur, parent);
@@ -113,14 +133,19 @@ class HeapPriorityQueue
                     nxt = 0;
                 else if(tag(cur) != thread_id)
                     nxt = parent;
-                unlock(cur);unlock(parent);
+                unlock(cur);
+                // __asm__ __volatile__("mfence" ::
+                //                          : "memory");
+                unlock(parent);
                 cur = nxt;
             }
-            
+
             if(cur == 1){
                 lock(cur);
                 if(tag(cur) == thread_id)
                     items[cur].tag = AVAILABLE;
+                // __asm__ __volatile__("mfence" ::
+                //                          : "memory");
                 unlock(cur);
             }
             // print_heap();
@@ -134,7 +159,7 @@ class HeapPriorityQueue
             int p = priority(bottom), value = items[bottom].value;
             items[bottom].tag = EMPTY;
             unlock(bottom);
-            
+
             // lock first item. Stop if it was the only item in the heap
             lock(ROOT);
             if (tag(ROOT) == EMPTY) {
@@ -146,7 +171,7 @@ class HeapPriorityQueue
             swap(p, items[ROOT].priority);
             items[ROOT].value = value;
             items[ROOT].tag = AVAILABLE;
-            
+
             // adjust heap starting at top.
             int i = ROOT;
             while (i < max_size / 2) {
@@ -178,4 +203,5 @@ class HeapPriorityQueue
             return p;
         }
 };
+
 
