@@ -30,7 +30,7 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
-#include <cstring>
+
 #include <limits.h>
 #include <sys/types.h>
 

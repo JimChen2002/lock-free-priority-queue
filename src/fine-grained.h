@@ -10,7 +10,7 @@
 #define RCHILD(i) (2*i + 1)
 #define ROOT 1
 
-#define MAXN (1<<20)
+#define MAXN (1<<18)
 
 using namespace std;
 
@@ -29,11 +29,11 @@ struct Node
     }
 };
 
-class BitReversedCounter 
+class BitReversedCounter
 {
     private:
         int counter, reversed, high_bit;
-    public: 
+    public:
         BitReversedCounter(){
             counter = 0, reversed = 0, high_bit = -1;
         }
@@ -84,7 +84,7 @@ class HeapPriorityQueue
             // items[i].L.unlock(); 
         }
         int tag(int i) { return items[i].tag; }
-        int priority(int i) { return items[i].priority; } 
+        int priority(int i) { return items[i].priority; }
         void swap_items(int i,int j) { items[i].exchange(items[j]); }
         void print_heap() {for (int i = 1; i <= max_size; i++) {printf("{k: %d, v: %d} ", items[i].priority, items[i].value);} printf("\n");}
     public:
@@ -135,11 +135,13 @@ class HeapPriorityQueue
                 unlock(parent);
                 cur = nxt;
             }
-            
+
             if(cur == 1){
                 lock(cur);
                 if(tag(cur) == thread_id)
                     items[cur].tag = AVAILABLE;
+                // __asm__ __volatile__("mfence" ::
+                //                          : "memory");
                 unlock(cur);
             }
             // print_heap();
@@ -161,7 +163,7 @@ class HeapPriorityQueue
             int p = priority(bottom), value = items[bottom].value;
             items[bottom].tag = EMPTY;
             unlock(bottom);
-            
+
             // lock first item. Stop if it was the only item in the heap
             lock(ROOT);
             if (tag(ROOT) == EMPTY) {
@@ -173,7 +175,7 @@ class HeapPriorityQueue
             swap(p, items[ROOT].priority);
             items[ROOT].value = value;
             items[ROOT].tag = AVAILABLE;
-            
+
             // adjust heap starting at top.
             int i = ROOT;
             while (i < max_size / 2) {
@@ -207,4 +209,5 @@ class HeapPriorityQueue
             return p;
         }
 };
+
 
