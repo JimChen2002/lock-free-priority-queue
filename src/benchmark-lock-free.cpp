@@ -40,7 +40,7 @@
 /* check your cpu core numbering before pinning */
 // #define PIN
 
-#define DEFAULT_SECS 10
+#define DEFAULT_SECS 2
 #define DEFAULT_NTHREADS 4
 #define DEFAULT_OFFSET 32
 #define DEFAULT_SIZE 1 << 15
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
     int exp = 0;
     int init_size = DEFAULT_SIZE;
     int concise = 0;
-    work = work_flow;
+    work = work_uni;
 
     while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
     {

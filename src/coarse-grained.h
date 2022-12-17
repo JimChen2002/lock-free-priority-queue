@@ -18,6 +18,10 @@ class SimplePriorityQueue
         int deleteMin()
         {
             L.lock();
+            if (Q.empty()) {
+                L.unlock();
+                return -1;
+            }
             int ans = Q.top();
             Q.pop();
             L.unlock();

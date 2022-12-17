@@ -153,6 +153,7 @@ class HeapPriorityQueue
 
             // if nothing is in the pq
             if (bottom == 0) {
+                printf("This happened\n");
                 sz.increment();
                 sz_lock.unlock();
                 return -1;

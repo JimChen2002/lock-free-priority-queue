@@ -1,13 +1,9 @@
 import subprocess
-import re
 import csv
+import matplotlib.pyplot as plt
 
-
-
-cores = [1, 2, 4, 8, 16, 24, 32, 64, 128]
-local_cores = [1, 2, 4, 6]
-
-
+# cores = [1, 2, 4, 8, 16, 24, 32, 64, 128]
+cores = [1, 2, 3, 4]
 
 def find_ops_per_second(output):
     output_str = output.decode()
@@ -19,14 +15,19 @@ def find_ops_per_second(output):
 
 
 def run_benchmark(filename):
+    y = []
     with open(filename+".csv", "w", newline="") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=["Thread count", "Ops/s"])
         writer.writeheader()
 
-        for core_cnt in local_cores:
+        for core_cnt in cores:
             output = subprocess.check_output(["./" + filename, str(core_cnt)])
             speed = find_ops_per_second(output)
             writer.writerow({"Thread count": str(core_cnt), "Ops/s": speed})
+            y.append(int(speed))
+
+        return y
+      
 
 
 if __name__ == "__main__":
@@ -38,22 +39,23 @@ if __name__ == "__main__":
     subprocess.call(fine_grained_cmd)
     subprocess.call(lock_free_cmd)
 
+    y1 = run_benchmark("coarse")
+    # y2 = []
+    # y3 = []
+    y2 = run_benchmark("fine")
+    y3 = run_benchmark("lockfree")
 
-    run_benchmark("coarse")
 
-   
-
+    # plt.autoscale(True)
     
-
-    
-    
-
-
-
-
-
-
-
+    plt.plot(cores, y1, label="coarse-grained")
+    plt.plot(cores, y2, label ="fine-grained")
+    plt.plot(cores, y3, label = "lock-free")
+    plt.legend()
+    plt.xlabel("Thread count")
+    plt.ylabel("Ops/second")
+    plt.savefig("test.png", dpi=300)
+    plt.clf()
 
     subprocess.call("rm coarse".split( ))
     subprocess.call("rm fine".split( ))
