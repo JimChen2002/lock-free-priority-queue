@@ -196,7 +196,8 @@ int main(int argc, char **argv)
 
     extern char *optarg;
     extern int optind, optopt;
-    int nthreads = DEFAULT_NTHREADS;
+    // int nthreads = DEFAULT_NTHREADS;
+    int nthreads = atoi(argv[1]);
     int offset = DEFAULT_OFFSET;
     int secs = DEFAULT_SECS;
     int exp = 0;

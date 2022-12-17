@@ -40,7 +40,7 @@
 /* check your cpu core numbering before pinning */
 // #define PIN
 
-#define DEFAULT_SECS 2
+#define DEFAULT_SECS 10
 #define DEFAULT_NTHREADS 4
 #define DEFAULT_OFFSET 32
 #define DEFAULT_SIZE 1 << 15
@@ -199,7 +199,8 @@ int main(int argc, char **argv)
 
     extern char *optarg;
     extern int optind, optopt;
-    int nthreads = DEFAULT_NTHREADS;
+    // int nthreads = DEFAULT_NTHREADS;
+    int nthreads = atoi(argv[1]);
     int offset = DEFAULT_OFFSET;
     int secs = DEFAULT_SECS;
     int exp = 0;
