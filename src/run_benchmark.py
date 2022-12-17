@@ -1,9 +1,9 @@
 import subprocess
 import csv
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
-# cores = [1, 2, 4, 8, 16, 24, 32, 64, 128]
-cores = [1, 2, 3, 4]
+cores = [1, 2, 4, 8, 16, 24, 32, 64, 127]
+# cores = [1, 2, 3, 4]
 
 def find_ops_per_second(output):
     output_str = output.decode()
@@ -31,9 +31,9 @@ def run_benchmark(filename):
 
 
 if __name__ == "__main__":
-    coarse_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o coarse benchmark-coarse-grained.cpp".split(' ')
-    fine_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o fine benchmark-heap.cpp".split(' ')
-    lock_free_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o lockfree benchmark-lock-free.cpp".split(' ')
+    coarse_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o coarse reaction-diffusion-coarse-grained.cpp".split(' ')
+    fine_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o fine reaction-diffusion-heap.cpp".split(' ')
+    lock_free_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o lockfree reaction-diffusion-lock-free.cpp".split(' ')
 
     subprocess.call(coarse_grained_cmd)
     subprocess.call(fine_grained_cmd)
@@ -48,14 +48,14 @@ if __name__ == "__main__":
 
     # plt.autoscale(True)
     
-    plt.plot(cores, y1, label="coarse-grained")
-    plt.plot(cores, y2, label ="fine-grained")
-    plt.plot(cores, y3, label = "lock-free")
-    plt.legend()
-    plt.xlabel("Thread count")
-    plt.ylabel("Ops/second")
-    plt.savefig("test.png", dpi=300)
-    plt.clf()
+    # plt.plot(cores, y1, label="coarse-grained")
+    # plt.plot(cores, y2, label ="fine-grained")
+    # plt.plot(cores, y3, label = "lock-free")
+    # plt.legend()
+    # plt.xlabel("Thread count")
+    # plt.ylabel("Ops/second")
+    # plt.savefig("test.png", dpi=300)
+    # plt.clf()
 
     subprocess.call("rm coarse".split( ))
     subprocess.call("rm fine".split( ))

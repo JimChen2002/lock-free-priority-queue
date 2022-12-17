@@ -42,7 +42,7 @@
 #define DEFAULT_SECS 2
 #define DEFAULT_NTHREADS 4
 #define DEFAULT_OFFSET 32
-#define DEFAULT_SIZE 1 << 15
+#define DEFAULT_SIZE (1 << 20)
 #define EXPS 100000000
 #define NLEVEL 32
 
@@ -204,7 +204,8 @@ int main(int argc, char **argv)
     int init_size = DEFAULT_SIZE;
     int concise = 0;
 
-    work = work_uni;
+    work = work_exp;
+    exp = 1;
 
     while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
     {
@@ -371,6 +372,9 @@ void work_exp(int id)
     unsigned long elem;
     pq->deleteMin();
     pos = __sync_fetch_and_add(&exps_pos, 1);
+    if (pos >= (1 << 22)) {
+        printf("Shit no \n");
+    }
     elem = exps[pos];
     // pq->insert((int)elem, (int)elem, id);
     pq->insert((int)elem);

@@ -44,7 +44,7 @@
 #define DEFAULT_SECS 2
 #define DEFAULT_NTHREADS 2
 #define DEFAULT_OFFSET 32
-#define DEFAULT_SIZE 1 << 15
+#define DEFAULT_SIZE 1 << 20
 #define EXPS 100000000
 #define NLEVEL 32
 
@@ -207,7 +207,8 @@ int main(int argc, char **argv)
     int exp = 0;
     int init_size = DEFAULT_SIZE;
     int concise = 0;
-    work = work_uni;
+    work = work_exp;
+    exp = 1;
 
     while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
     {
