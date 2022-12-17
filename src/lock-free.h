@@ -28,7 +28,7 @@ struct Node{
 
 class LockFreePriorityQueue {
     private:
-        const static int BOUNDOFFSET = 5000;
+        const static int BOUNDOFFSET = 8;
         int nlevels;
         Node *head, *tail;
         int reclaim_timestamp, current_timestamp;
@@ -159,33 +159,31 @@ class LockFreePriorityQueue {
             Node* obs_combined = combine_reference(obshead,1);
             if(head->next[0].compare_exchange_strong(obs_combined,combine_reference(newhead,1))){
                 restructure();
-                Node *cur = obshead, *nxt;
-                int current_timestamp = obshead->timestamp;
-                bool tmp;
-                while(cur!=newhead){
-                    cur->timestamp = current_timestamp++;
-                    nxt = parse_reference(cur->next[0],tmp);
-                    cur = nxt;
-                }
-                newhead->timestamp = current_timestamp++;
-
-                int earliest_timestamp = current_timestamp;
-                for(size_t i=0;i<(size_t)nlevels;i++){
-                    cur = parse_reference(head->next[i],tmp);
-                    if(cur != tail)
-                        earliest_timestamp = min(earliest_timestamp, cur->timestamp);
-                }
-
-                if(reclaim == nullptr) reclaim = obshead;
-                int cnt = 0;
-                while(reclaim->timestamp + 5000 < current_timestamp && reclaim->timestamp < earliest_timestamp){
-                    nxt = parse_reference(reclaim->next[0],tmp);
-                    free(reclaim);
-                    reclaim = nxt;
-                    cnt++;
-                }
-                if (cnt > 0) printf("%d nodes claimed\n", cnt);
             }
             return value;
+        }
+        pair<int,int> pop() {
+            bool ttt;
+            Node *x=head,*newhead=nullptr,*obshead=parse_reference(x->next[0],ttt);
+            int offset=0;
+            bool d=true;
+            while(d){
+                Node* nxt=parse_reference(x->next[0],d);
+                if(nxt==tail) 
+                    return make_pair(-1,-1); // queue is empty
+                if(x->inserting && newhead==nullptr)
+                    newhead=x;
+                nxt=fetch_and_or(x->next[0],d);
+                offset++;
+                x=nxt;
+            }
+            auto ret = make_pair(x->key, x->value);
+            if(offset < BOUNDOFFSET) return ret;
+            if(newhead==nullptr) newhead=x;
+            Node* obs_combined = combine_reference(obshead,1);
+            if(head->next[0].compare_exchange_strong(obs_combined,combine_reference(newhead,1))){
+                restructure();
+            }
+            return ret;
         }
 };

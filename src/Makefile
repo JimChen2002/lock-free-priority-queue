@@ -10,4 +10,7 @@ pq_test:
 
 bench:
 	$(CC) $(CPPFLAGS) -o benchmark benchmark.cpp && ./benchmark
+
+react:
+	$(CC) $(CPPFLAGS) -o reaction-diffusion-coarse-grained reaction-diffusion-coarse-grained.cpp && ./reaction-diffusion-coarse-grained
 	

@@ -10,7 +10,7 @@
 #define RCHILD(i) (2*i + 1)
 #define ROOT 1
 
-#define MAXN (1<<18)
+#define MAXN (1<<22)
 
 using namespace std;
 
@@ -153,7 +153,6 @@ class HeapPriorityQueue
 
             // if nothing is in the pq
             if (bottom == 0) {
-                printf("This happened\n");
                 sz.increment();
                 sz_lock.unlock();
                 return -1;
@@ -206,8 +205,69 @@ class HeapPriorityQueue
                 }
             }
             unlock(i);
-            // print_heap();
             return p;
+        }
+        pair<int,int> pop()
+        {
+            sz_lock.lock();
+            int bottom = sz.decrement();
+
+            // if nothing is in the pq
+            if (bottom == 0) {
+                sz.increment();
+                sz_lock.unlock();
+                return make_pair(-1,-1);
+            }
+            
+            lock(bottom);
+            sz_lock.unlock();
+            int p = priority(bottom), value = items[bottom].value;
+            items[bottom].tag = EMPTY;
+            unlock(bottom);
+
+            // lock first item. Stop if it was the only item in the heap
+            lock(ROOT);
+            if (tag(ROOT) == EMPTY) {
+                unlock(ROOT);
+                return make_pair(-1,-1);
+            }
+
+            auto ret = make_pair(items[ROOT].priority, items[ROOT].value);
+            // replace the top item with the item stored from the bottom
+            swap(p, items[ROOT].priority);
+            items[ROOT].value = value;
+            items[ROOT].tag = AVAILABLE;
+
+            // adjust heap starting at top.
+            int i = ROOT;
+            while (i < max_size / 2) {
+                int child;
+                int left = LCHILD(i), right = RCHILD(i);
+                lock(left);
+                lock(right);
+                if (tag(left) == EMPTY) {
+                    unlock(right);
+                    unlock(left);
+                    break;
+                } else if (tag(right) == EMPTY || priority(left) > priority(right)) {
+                    unlock(right);
+                    child = left;
+                } else {
+                    unlock(left);
+                    child = right;
+                }
+
+                if (priority(child) > priority(i)) {
+                    swap_items(child, i);
+                    unlock(i);
+                    i = child;
+                } else {
+                    unlock(child);
+                    break;
+                }
+            }
+            unlock(i);
+            return ret;
         }
 };
 
