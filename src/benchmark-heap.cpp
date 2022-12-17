@@ -30,6 +30,7 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
+#include <cstring>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -289,7 +290,6 @@ int main(int argc, char **argv)
         rng_init(t->rng);
         E_en(pthread_create(&t->thread, NULL, run, t));
     }
-    printf("Here3\n");
     /* RUN BENCHMARK */
 
     /* wait for all threads to call in */
@@ -315,7 +315,6 @@ int main(int argc, char **argv)
     {
         pthread_join(t->thread, NULL);
     }
-    printf("Here4\n");
     /* PRINT PERF. MEASURES */
     int sum = 0, min_num = INT_MAX, max_num = 0;
 
@@ -399,7 +398,6 @@ void *
 run(void *_args)
 {
     args = (thread_args_t *)_args;
-    printf("my tid is %d\n", args->id);
     int cnt = 0;
 
 #if defined(PIN) && defined(__linux__)

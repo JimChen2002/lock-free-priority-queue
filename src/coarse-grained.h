@@ -8,6 +8,7 @@ class SimplePriorityQueue
         priority_queue<int> Q;
         mutex L;
     public:
+        SimplePriorityQueue() {}
         void insert(int x)
         {
             L.lock();

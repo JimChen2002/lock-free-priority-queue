@@ -34,8 +34,7 @@
 #include <limits.h>
 #include <sys/types.h>
 
-#include "lock-free.h"
-// #include "fine-grained.h"
+#include "coarse-grained.h"
 
 /* check your cpu core numbering before pinning */
 // #define PIN
@@ -181,14 +180,12 @@ void rng_init(unsigned short rng[3])
     rng[2] = time.tv_nsec >> 32;
 }
 
-// LockFreePriorityQueue *pq;
-LockFreePriorityQueue *pq;
-// LockFreePriorityQueue *pq;
+SimplePriorityQueue *pq;
 
 int main(int argc, char **argv)
 {
     // pq = new LockFreePriorityQueue(NLEVEL);
-    pq = new LockFreePriorityQueue(32);
+    pq = new SimplePriorityQueue();
 
     int opt;
     unsigned short rng[3];
@@ -272,13 +269,13 @@ int main(int argc, char **argv)
         {
             elem = exps[exps_pos++];
             // pq->insert((int)elem, (int)elem, 0);
-            pq->insert((int)elem, (int)elem);
+            pq->insert((int)elem);
         }
         else
         {
             elem = nrand48(rng);
             // pq->insert((int)elem, (int)elem, 0);
-            pq->insert((int)elem, (int)elem);
+            pq->insert((int)elem);
         }
     }
 
@@ -289,6 +286,7 @@ int main(int argc, char **argv)
         rng_init(t->rng);
         E_en(pthread_create(&t->thread, NULL, run, t));
     }
+
     /* RUN BENCHMARK */
 
     /* wait for all threads to call in */
@@ -357,7 +355,7 @@ void work_uni(int id)
         elem = (unsigned long)1 + nrand48(args->rng);
         // printf("about to insert %d\n", (int)elem);
         // pq->insert((int)elem, (int)elem, id);
-        pq->insert((int)elem, (int)elem);
+        pq->insert((int)elem);
         // if(elem%10==1) printf("inserted %d\n", (int) elem);
     }
     else
@@ -373,14 +371,14 @@ void work_exp(int id)
     pos = __sync_fetch_and_add(&exps_pos, 1);
     elem = exps[pos];
     // pq->insert((int)elem, (int)elem, id);
-    pq->insert((int)elem, (int)elem);
+    pq->insert((int)elem);
 }
 
 void work_flow(int id) {
     if(id & 1) {
         // insert only
         int elem = (int)(1 + nrand48(args->rng));
-        pq->insert(elem, elem);
+        pq->insert(elem);
     }
     else {
         pq->deleteMin();
