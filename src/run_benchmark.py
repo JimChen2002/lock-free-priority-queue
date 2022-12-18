@@ -31,19 +31,19 @@ def run_benchmark(filename):
 
 
 if __name__ == "__main__":
-    coarse_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o coarse reaction-diffusion-coarse-grained.cpp".split(' ')
-    fine_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o fine reaction-diffusion-heap.cpp".split(' ')
+    coarse_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o coarse benchmark-coarse-grained.cpp".split(' ')
+    fine_grained_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o fine benchmark-heap.cpp".split(' ')
     lock_free_cmd = "g++ -O2 -std=c++17 -pthread -Wall -o lockfree reaction-diffusion-lock-free.cpp".split(' ')
 
     subprocess.call(coarse_grained_cmd)
     subprocess.call(fine_grained_cmd)
     subprocess.call(lock_free_cmd)
 
-    y1 = run_benchmark("coarse")
-    # y2 = []
-    # y3 = []
-    y2 = run_benchmark("fine")
-    y3 = run_benchmark("lockfree")
+    # y1 = run_benchmark("coarse")
+    # # y2 = []
+    # # y3 = []
+    # y2 = run_benchmark("fine")
+    # y3 = run_benchmark("lockfree")
 
 
     # plt.autoscale(True)
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     # plt.savefig("test.png", dpi=300)
     # plt.clf()
 
-    subprocess.call("rm coarse".split( ))
-    subprocess.call("rm fine".split( ))
-    subprocess.call("rm lockfree".split( ))
+    # subprocess.call("rm coarse".split( ))
+    # subprocess.call("rm fine".split( ))
+    # subprocess.call("rm lockfree".split( ))
 
 

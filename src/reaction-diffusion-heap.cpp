@@ -1,26 +1,9 @@
-/**
- * @file benchmark.cpp
- * @brief File for benchmarking different priority queues
- * @date 2022-12-01
- *
- * program usage:
- * ./benchmark -n <NUM_THREADS> -i <TEST DURATION (in seconds)> -w <WORKLOAD TYPE>
- *
- * 2 kinds of workloads: Uniform and DES (discrete event simulation)
- * https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
- *
- * Step 1: run experiment, measure # of ops / sec
- * Step 2: save results to csv
- *
- */
 
 /**
- * Priority queue test harness.
- *
- *
- * Copyright (c) 2013-2018, Jonatan Linden
- *
- */
+ * Benchmark file for fine-grained version of priority queue
+ * 
+ * Part of the benchmark harness was inspired by https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
+*/
 
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -36,8 +19,7 @@
 
 #include "fine-grained.h"
 
-/* check your cpu core numbering before pinning */
-// #define PIN
+#define PIN
 
 #define DEFAULT_SECS 2
 #define DEFAULT_NTHREADS 4
@@ -48,6 +30,16 @@
 #define GRIDSIZE 1000
 
 const double REACTION_RATE = 1e-7, DIFFUSION_RATE = 1e-6;
+
+void
+pin(pid_t t, int cpu) 
+{
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu, &cpuset);
+    sched_setaffinity(t, sizeof(cpu_set_t), &cpuset);
+}
+
 
 #define THREAD_ARGS_FOREACH(_iter) \
     for (int i = 0; i < nthreads && (_iter = &ts[i]); i++)
@@ -97,7 +89,6 @@ typedef struct thread_args_s
 struct MeshNode
 {
     double density;
-    // char padding[56];
 } M[GRIDSIZE][GRIDSIZE];
 int getid(int x,int y){
     return x*GRIDSIZE+y;
@@ -191,38 +182,11 @@ int main(int argc, char **argv)
     int concise = 0;
     work = work_react_diff;
 
-    while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
-    {
-        switch (opt)
-        {
-        case 'n':
-            nthreads = atoi(optarg);
-            break;
-        case 't':
-            secs = atoi(optarg);
-            break;
-        case 'o':
-            offset = atoi(optarg);
-            break;
-        case 's':
-            init_size = atoi(optarg);
-            break;
-        case 'x':
-            concise = 1;
-            break;
-        }
-    }
-
     printf("Compilation succeed!\n");
-
-#ifndef PIN
-    printf("Running without threads pinned to cores.\n");
-#endif
 
     E_NULL(ts = (thread_args_t *)malloc(nthreads * sizeof(thread_args_t)));
     memset(ts, 0, nthreads * sizeof(thread_args_t));
 
-    // finally available in macos 10.12 as well!
     clock_gettime(CLOCK_REALTIME, &time);
 
     /* initialize seed */
@@ -343,8 +307,6 @@ run(void *_args)
     int cnt = 0;
 
 #if defined(PIN) && defined(__linux__)
-    /* Straight allocation on 32 core machine.
-     * Check with your OS + machine.  */
     pin(gettid(), args->id / 8 + 4 * (args->id % 8));
 #endif
 
@@ -359,7 +321,6 @@ run(void *_args)
     {
         work(args->id);
         cnt++;
-        // if(cnt%1000==0) printf("%d ops!\n",cnt);
     } while (loop);
     /* end of measured execution */
 

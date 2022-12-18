@@ -1,26 +1,9 @@
-/**
- * @file benchmark.cpp
- * @brief File for benchmarking different priority queues
- * @date 2022-12-01
- *
- * program usage:
- * ./benchmark -n <NUM_THREADS> -i <TEST DURATION (in seconds)> -w <WORKLOAD TYPE>
- *
- * 2 kinds of workloads: Uniform and DES (discrete event simulation)
- * https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
- *
- * Step 1: run experiment, measure # of ops / sec
- * Step 2: save results to csv
- *
- */
 
 /**
- * Priority queue test harness.
- *
- *
- * Copyright (c) 2013-2018, Jonatan Linden
- *
- */
+ * Benchmark file for lock-free version of priority queue
+ * 
+ * Part of the benchmark harness was inspired by https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
+*/
 
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -35,7 +18,6 @@
 #include <sys/types.h>
 
 #include "lock-free.h"
-// #include "fine-grained.h"
 
 /* check your cpu core numbering before pinning */
 // #define PIN
@@ -98,7 +80,6 @@ typedef struct thread_args_s
 struct MeshNode
 {
     double density;
-    // char padding[56];
 } M[GRIDSIZE][GRIDSIZE];
 int getid(int x,int y){
     return x*GRIDSIZE+y;
@@ -160,7 +141,7 @@ void rng_init(unsigned short rng[3])
 {
     struct timespec time;
 
-    // finally available in macos 10.12 as well!
+
     clock_gettime(CLOCK_REALTIME, &time);
 
     /* initialize seed */
@@ -192,28 +173,6 @@ int main(int argc, char **argv)
     int concise = 0;
     work = work_react_diff;
 
-    while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
-    {
-        switch (opt)
-        {
-        case 'n':
-            nthreads = atoi(optarg);
-            break;
-        case 't':
-            secs = atoi(optarg);
-            break;
-        case 'o':
-            offset = atoi(optarg);
-            break;
-        case 's':
-            init_size = atoi(optarg);
-            break;
-        case 'x':
-            concise = 1;
-            break;
-        }
-    }
-
     printf("Compilation succeed!\n");
 
 #ifndef PIN
@@ -231,7 +190,6 @@ int main(int argc, char **argv)
     rng[1] = time.tv_nsec >> 16;
     rng[2] = time.tv_nsec >> 32;
 
-    /* initialize garbage collection */
 
     // if DES workload, pre-sample values/event times
     if (exp)

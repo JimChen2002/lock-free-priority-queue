@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mutex>
 #include <vector>
+#include <chrono>
 
 #define EMPTY 0x0EADBEEF
 #define AVAILABLE 0x0CCCFFEE
@@ -17,7 +18,6 @@ using namespace std;
 struct Node
 {
     int priority, value, tag;
-    mutex L;
     pthread_mutex_t mux;
         // char padding[48];
         void
@@ -27,6 +27,7 @@ struct Node
         swap(value, other.value);
         swap(tag, other.tag);
     }
+    
 };
 
 class BitReversedCounter
@@ -74,6 +75,7 @@ class HeapPriorityQueue
         mutex sz_lock;
         BitReversedCounter sz;
         Node items[MAXN];
+        
         int max_size;
         void lock(int i) { 
             // items[i].L.lock();
@@ -88,6 +90,7 @@ class HeapPriorityQueue
         void swap_items(int i,int j) { items[i].exchange(items[j]); }
         void print_heap() {for (int i = 1; i <= max_size; i++) {printf("{k: %d, v: %d} ", items[i].priority, items[i].value);} printf("\n");}
     public:
+        chrono::nanoseconds time_elapsed;
         HeapPriorityQueue(int n){
             max_size = 1;
             while(max_size < n)
@@ -103,8 +106,12 @@ class HeapPriorityQueue
         }
         void insert(int key, int value, int thread_id)
         {   
-            // printf("inserted element key %d and value %d\n", key, value);
+            
+            
+            auto start = std::chrono::high_resolution_clock::now();
             sz_lock.lock();
+            auto finish = std::chrono::high_resolution_clock::now();
+            this->time_elapsed += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start);
             int cur = sz.increment();
             lock(cur);
             sz_lock.unlock();
@@ -148,16 +155,19 @@ class HeapPriorityQueue
         }
         int deleteMin()
         {
+            auto start = std::chrono::high_resolution_clock::now();
             sz_lock.lock();
+            
             int bottom = sz.decrement();
-
+            auto finish = std::chrono::high_resolution_clock::now();
+            this->time_elapsed += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start);
             // if nothing is in the pq
             if (bottom == 0) {
                 sz.increment();
                 sz_lock.unlock();
                 return -1;
             }
-            
+
             lock(bottom);
             sz_lock.unlock();
             int p = priority(bottom), value = items[bottom].value;

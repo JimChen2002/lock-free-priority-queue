@@ -1,27 +1,9 @@
-/**
- * @file benchmark.cpp
- * @brief File for benchmarking different priority queues
- * @date 2022-12-01
- *
- * program usage:
- * ./benchmark -n <NUM_THREADS> -i <TEST DURATION (in seconds)> -w <WORKLOAD TYPE>
- *
- * 2 kinds of workloads: Uniform and DES (discrete event simulation)
- * https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
- *
- * Step 1: run experiment, measure # of ops / sec
- * Step 2: save results to csv
- *
- */
 
 /**
- * Priority queue test harness.
- *
- *
- * Copyright (c) 2013-2018, Jonatan Linden
- *
- */
-
+ * Benchmark file for coarse-grained locking version of priority queue
+ * 
+ * Part of the benchmark harness was inspired by https://github.com/jonatanlinden/PR/blob/master/perf_meas.c
+*/
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <stdlib.h>
@@ -192,33 +174,7 @@ int main(int argc, char **argv)
     int concise = 0;
     work = work_react_diff;
 
-    while ((opt = getopt(argc, argv, "t:n:o:s:hex")) >= 0)
-    {
-        switch (opt)
-        {
-        case 'n':
-            nthreads = atoi(optarg);
-            break;
-        case 't':
-            secs = atoi(optarg);
-            break;
-        case 'o':
-            offset = atoi(optarg);
-            break;
-        case 's':
-            init_size = atoi(optarg);
-            break;
-        case 'x':
-            concise = 1;
-            break;
-        }
-    }
-
     printf("Compilation succeed!\n");
-
-#ifndef PIN
-    printf("Running without threads pinned to cores.\n");
-#endif
 
     E_NULL(ts = (thread_args_t *)malloc(nthreads * sizeof(thread_args_t)));
     memset(ts, 0, nthreads * sizeof(thread_args_t));
